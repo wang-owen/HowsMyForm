@@ -76,7 +76,7 @@ const UploadForm = () => {
             </p>
             <form onSubmit={handleSubmit} className="flex flex-col items-center space-y-6">
                 <div
-                    className={`border-4 border-dashed border-white p-10 w-96 text-center cursor-pointer rounded-lg transition-transform duration-300 ${
+                    className={`border-4 border-solid border-white p-10 w-96 text-center cursor-pointer rounded-lg transition-transform duration-300 ${
                         dragActive ? "bg-white bg-opacity-20" : "bg-opacity-10"
                     }`}
                     onDragOver={handleDragOver}    // Activate drag over event
@@ -84,11 +84,21 @@ const UploadForm = () => {
                     onDrop={handleDrop}            // Handle file drop
                     onClick={() => document.getElementById("video-upload").click()} // Click to open file input
                 >
-                    {file ? (
-                        <p>{file.name}</p>   // Show selected file name
-                    ) : (
-                        <p>Drag & Drop your video file here or click to browse</p>
-                    )}
+                    {/* Upload SVG Icon only */}
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-12 w-12 mx-auto text-white opacity-70"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 16v-8m0 0l-4 4m4-4l4 4M4 16h16"
+                        />
+                    </svg>
                 </div>
                 <input
                     type="file"
