@@ -3,6 +3,7 @@ import logo from "./assets/logo.png";  // Import the logo image
 
 const UploadForm = () => {
     const [file, setFile] = useState(null);
+    const [fileName, setFileName] = useState(""); // State for the name of the uploaded file
     const [dragActive, setDragActive] = useState(false);
     const [movement, setMovement] = useState("");  // State for selected movement
 
@@ -13,7 +14,9 @@ const UploadForm = () => {
         setDragActive(false);
 
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            setFile(e.dataTransfer.files[0]);  // Capture the dropped file
+            const selectedFile = e.dataTransfer.files[0];
+            setFile(selectedFile);  // Capture the dropped file
+            setFileName(selectedFile.name); // Store the name of the dropped file
         }
     };
 
@@ -34,7 +37,9 @@ const UploadForm = () => {
     // Handles file selection via the file input
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0]);  // Capture the selected file
+            const selectedFile = e.target.files[0];
+            setFile(selectedFile);  // Capture the selected file
+            setFileName(selectedFile.name); // Store the name of the selected file
         }
     };
 
@@ -57,7 +62,7 @@ const UploadForm = () => {
         formData.append("movement", movement);   // Append selected movement to FormData
 
         try {
-            const response = await fetch("http:127.0.0.1:8000/check-form", {
+            const response = await fetch("http://127.0.0.1:8000/check-form", {
                 method: "POST",
                 body: formData,
             });
@@ -86,6 +91,18 @@ const UploadForm = () => {
                 help you improve!
             </p>
             <form onSubmit={handleSubmit} className="flex flex-col items-center space-y-6">
+                {/* Dropdown for movement selection */}
+                <select
+                    value={movement}
+                    onChange={handleMovementChange}
+                    className="bg-white text-gray-800 p-3 rounded-md border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                >
+                    <option value="" disabled>Select your movement</option>
+                    <option value="bench">Bench Press</option>
+                    <option value="squat">Squat</option>
+                    <option value="deadlift">Deadlift</option>
+                </select>
                 <div
                     className={`border-4 border-solid border-white p-10 w-96 text-center cursor-pointer rounded-lg transition-transform duration-300 ${
                         dragActive ? "bg-white bg-opacity-20" : "bg-opacity-10"
@@ -95,21 +112,25 @@ const UploadForm = () => {
                     onDrop={handleDrop}            // Handle file drop
                     onClick={() => document.getElementById("video-upload").click()} // Click to open file input
                 >
-                    {/* Upload SVG Icon only */}
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-12 w-12 mx-auto text-white opacity-70"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 16v-8m0 0l-4 4m4-4l4 4M4 16h16"
-                        />
-                    </svg>
+                    {/* Conditionally display uploaded video name or upload logo text */}
+                    {fileName ? (
+                        <p className="text-white mt-2">Uploaded Video: "{fileName}"</p>
+                    ) : (
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-12 w-12 mx-auto text-white opacity-70"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 16v-8m0 0l-4 4m4-4l4 4M4 16h16"
+                            />
+                        </svg>
+                    )}
                 </div>
                 <input
                     type="file"
@@ -119,18 +140,6 @@ const UploadForm = () => {
                     className="hidden"  // Hide the file input field
                     onChange={handleFileChange}  // Handle file selection
                 />
-                {/* Dropdown for movement selection */}
-                <select
-                    value={movement}
-                    onChange={handleMovementChange}
-                    className="bg-gray-200 text-gray-800 p-3 rounded-md"
-                    required
-                >
-                    <option value="" disabled>Select your movement</option>
-                    <option value="bench">Bench Press</option>
-                    <option value="squat">Squat</option>
-                    <option value="deadlift">Deadlift</option>
-                </select>
                 <button
                     type="submit"
                     className="bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-6 text-lg rounded-lg shadow-lg transition-transform duration-300 hover:scale-105 hover:shadow-xl"
