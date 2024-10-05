@@ -1,52 +1,33 @@
 from ultralytics import YOLO
 import numpy as np
+import math
 
 
-class Coord:
-    def __init__(self, x, y) -> None:
-        self.x = x
-        self.y = y
+def calculate_angle(a, b, c):
+    A, B, C = a, b, c
 
-    def __add__(self, other):
-        return Coord(self.x + other.x, self.y + other.y)
+    # Vector AB
+    AB = [A[0] - B[0], A[1] - B[1]]
 
-    def __sub__(self, other):
-        return Coord(self.x - other.x, self.y - other.y)
+    # Vector BC
+    BC = [C[0] - B[0], C[1] - B[1]]
 
+    # Dot product of vectors AB and BC
+    dot_product = AB[0] * BC[0] + AB[1] * BC[1]
 
-# Define function to calculate angle between vectors
-def calculate_angle(a: Coord, b: Coord, c: Coord):
-    """Calculate the angle between 3 points
+    # Magnitudes of vectors AB and BC
+    magnitude_AB = math.sqrt(AB[0] ** 2 + AB[1] ** 2)
+    magnitude_BC = math.sqrt(BC[0] ** 2 + BC[1] ** 2)
 
-    Args:
-        a (Coord): First point
-        b (Coord): Second point
-        c (Coord): Third point
+    # Calculate the angle in radians and then convert it to degrees
+    angle_radians = math.acos(dot_product / (magnitude_AB * magnitude_BC))
+    angle_degrees = math.degrees(angle_radians)
 
-    Returns:
-        float: Angle between the 3 points
-    """
-    ba = a - b
-    bc = c - b
-
-    # Calculate the dot product
-    dot_product = np.dot(np.array([ba.x, ba.y]), np.array([bc.x, bc.y]))
-
-    # Calculate the magnitudes
-    magnitude_ba = np.linalg.norm(np.array([ba.x, ba.y]))
-    magnitude_bc = np.linalg.norm(np.array([bc.x, bc.y]))
-
-    # Calculate the angle in radians
-    angle = np.arccos(dot_product / (magnitude_ba * magnitude_bc))
-
-    # Convert the angle to degrees
-    angle = np.degrees(angle)
-
-    return angle
+    return angle_degrees
 
 
 def get_average_xy(a, b):
-    return Coord((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+    return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
 
 
 def get_keypoints(file):
@@ -59,81 +40,66 @@ def get_keypoints(file):
         task="pose",
         conf=0.7,
         save=True,
-        project="predictions",
+        project="posedetection",
+        name="prediction",
     )
 
     # Process the results
+    keypoints = []
     for result in results:
-        keypoints = result.keypoints  # Keypoints object for pose outputs
-        return keypoints
+        keypoints.append(result.keypoints)  # Keypoints object for pose outputs
+    return keypoints
 
 
 def check_squat(coords, angles):
     warning_frames = []
 
-    start_angle = angles["hip"][0]
-    start_index = 0
+    straight_angle = angles["hip"][0]
+    straight_i = 0
 
-    end_angle = angles["hip"][-1]
-    end_index = -1
     for i in range(len(angles["hip"])):
         angle = angles["hip"][i]
-        if 180 - angle < start_angle:
-            start_angle = angle
-            start_index = i
-    for i in range(len(angles["hip"]) - 1, 0, -1):
-        angle = angles["hip"][i]
-        if 180 - angle < end_angle:
-            end_angle = angle
-            end_index = i
+        if 180 - angle < straight_angle:
+            straight_angle = angle
+            straight_i = i
 
-    initial_back_length = np.linalg.norm(
-        np.array(coords["shoulder"][start_index].x) - coords["hip"][start_index].x,
-        np.array(coords["shoulder"][start_index].y) - coords["hip"][start_index].y,
+    straight_back_length = np.linalg.norm(
+        [
+            (coords["shoulder"][straight_i][0]) - coords["hip"][straight_i][0],
+            (coords["shoulder"][straight_i][1]) - coords["hip"][straight_i][1],
+        ]
     )
-    for frame in range(start_index + 1, end_index):
-        hip_angle = angles["hip"][frame]
-        knee_angle = angles["knee"][frame]
+
+    for frame_i in range(len(angles["hip"])):
+        hip_angle = angles["hip"][frame_i]
+        knee_angle = angles["knee"][frame_i]
 
         ratio = knee_angle / hip_angle
+        print(hip_angle, knee_angle, ratio)
+        # print(hip_angle, knee_angle)
+        # print(coords["shoulder"][frame_i][0], coords["shoulder"][frame_i][1])
+        # print(coords["hip"][frame_i][0], coords["hip"][frame_i][1])
+        # print(coords["knee"][frame_i][0], coords["knee"][frame_i][1])
+        # print(np.subtract(coords["hip"][frame_i], coords["shoulder"][frame_i]))
+        # print(np.subtract(coords["hip"][frame_i], coords["knee"][frame_i]))
+        # break
         back_length = np.linalg.norm(
-            np.array(coords["shoulder"][frame].x) - coords["hip"][frame].x,
-            np.array(coords["shoulder"][frame].y) - coords["hip"][frame].y,
+            [
+                (coords["shoulder"][frame_i][0]) - coords["hip"][frame_i][0],
+                (coords["shoulder"][frame_i][1]) - coords["hip"][frame_i][1],
+            ]
         )
-        if ratio > 1.5 or back_length < initial_back_length * 0.9:
-            warning_frames.append(frame)
+        if ratio > 1 or back_length < straight_back_length * 0.9:
+            warning_frames.append(frame_i)
 
     return warning_frames
 
 
-def check_bench(angles):
+def check_bench(coords):
     UPPER_ANGLE_BOUND = 60
     LOWER_ANGLE_BOUND = 30
 
     warning_frames = []
-
-    start_angle = angles["arm"][0]
-    start_index = 0
-
-    end_angle = angles["arm"][-1]
-    end_index = -1
-    for i in range(len(angles["arm"])):
-        angle = angles["arm"][i]
-        if 180 - angle < start_angle:
-            start_angle = angle
-            start_index = i
-    for i in range(len(angles["arm"]) - 1, 0, -1):
-        angle = angles["arm"][i]
-        if 180 - angle < end_angle:
-            end_angle = angle
-            end_index = i
-
-    for frame in range(start_index + 1, end_index):
-        if (
-            angles["shoulder"][frame] > UPPER_ANGLE_BOUND
-            or angles["shoulder"][frame] < LOWER_ANGLE_BOUND
-        ):
-            warning_frames.append(frame)
 
     return warning_frames
 
