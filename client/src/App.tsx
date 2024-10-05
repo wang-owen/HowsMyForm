@@ -77,6 +77,7 @@ const UploadForm = () => {
                 setIsComplete(true);
             } else {
                 console.error("Upload failed.");
+                setIsComplete(true);
             }
         } catch (error) {
             console.error("Error during upload:", error);
