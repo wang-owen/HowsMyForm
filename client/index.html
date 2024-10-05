@@ -1,13 +1,30 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
         <link rel="icon" type="image/svg+xml" href="/vite.svg" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Hows My Form?</title>
+        <title>How's My Form?</title>
     </head>
     <body>
-        <div id="root"></div>
+        <div id="root">
+            <h1>How's My Form?</h1>
+            <p>
+                Upload a video of your workout, and we'll analyze your form to
+                help you improve!
+            </p>
+            <form action="/upload" method="POST" enctype="multipart/form-data">
+                <label for="video-upload">Upload your workout video:</label>
+                <input
+                    type="file"
+                    id="video-upload"
+                    name="video-upload"
+                    accept="video/*"
+                    required
+                />
+                <button type="submit">Submit</button>
+            </form>
+        </div>
         <script type="module" src="/src/main.tsx"></script>
     </body>
 </html>
