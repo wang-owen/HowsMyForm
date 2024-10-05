@@ -58,8 +58,7 @@ def get_keypoints(file):
         source=file,
         task="pose",
         conf=0.7,
-        show=True,
-        save=False,
+        save=True,
         project="predictions",
     )
 
