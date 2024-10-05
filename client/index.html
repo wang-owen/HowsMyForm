@@ -1,13 +1,58 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
         <link rel="icon" type="image/svg+xml" href="/vite.svg" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Hows My Form?</title>
+        <title>How's My Form?</title>
+        <style>
+            /* Center the loading content */
+            #loading {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                font-size: 2rem;
+                font-weight: bold;
+                color: #333;
+            }
+
+            /* Optional spinner styling */
+            #spinner {
+                border: 4px solid rgba(0, 0, 0, 0.1);
+                border-left-color: #333;
+                border-radius: 50%;
+                width: 3rem;
+                height: 3rem;
+                animation: spin 1s linear infinite;
+                margin-right: 1rem;
+            }
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+        </style>
     </head>
     <body>
-        <div id="root"></div>
+        <div id="loading">
+            <div id="spinner"></div>
+            <p>Loading...</p>
+        </div>
+        <div id="root" style="display: none"></div>
         <script type="module" src="/src/main.tsx"></script>
+        <script>
+            // Once the React app is loaded, hide the loading screen and show the app
+            document.addEventListener("DOMContentLoaded", () => {
+                const loading = document.getElementById("loading");
+                const root = document.getElementById("root");
+
+                if (root && loading) {
+                    root.style.display = "block";
+                    loading.style.display = "none";
+                }
+            });
+        </script>
     </body>
 </html>
