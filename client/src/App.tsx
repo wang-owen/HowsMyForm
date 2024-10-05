@@ -1,4 +1,5 @@
 import { useState } from "react";
+import logo from "./assets/logo.png";  // Import the logo image
 
 const UploadForm = () => {
     const [file, setFile] = useState(null);
@@ -69,6 +70,9 @@ const UploadForm = () => {
             id="root"
             className="flex flex-col justify-center items-center h-screen space-y-10 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 font-sans text-white"
         >
+            <div className="absolute top-4 right-4">
+                <img src={logo} alt="Logo" className="h-16 w-auto" />  {/* Updated image source */}
+            </div>
             <h1 className="text-5xl">How's My Form?</h1>
             <p className="text-2xl text-center max-w-lg">
                 Upload a video of your workout, and we'll analyze your form to
