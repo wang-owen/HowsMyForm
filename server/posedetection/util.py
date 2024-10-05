@@ -93,6 +93,11 @@ def check_squat(coords, angles):
         np.array(coords["shoulder"][start_index].x) - coords["hip"][start_index].x,
         np.array(coords["shoulder"][start_index].y) - coords["hip"][start_index].y,
     )
+
+    initial_calf_length = np.linalg.norm(
+        np.array(coords["knee"][start_index].x) - coords["ankle"][start_index].x,
+        np.array(coords["knee"][start_index].y) - coords["ankle"][start_index].y
+    )
     for frame in range(start_index + 1, end_index):
         hip_angle = angles["hip"][frame]
         knee_angle = angles["knee"][frame]
@@ -102,7 +107,11 @@ def check_squat(coords, angles):
             np.array(coords["shoulder"][frame].x) - coords["hip"][frame].x,
             np.array(coords["shoulder"][frame].y) - coords["hip"][frame].y,
         )
-        if ratio > SQUAT_WARNING_RATIO or back_length < initial_back_length * 0.9:
+        calf_length = np.linalg.norm(
+            np.array(coords["knee"][frame].x) - coords["ankle"][frame].x,
+            np.array(coords["knee"][frame].y) - coords["ankle"][frame].y,
+        )
+        if ratio > SQUAT_WARNING_RATIO or back_length < initial_back_length * 0.9 or calf_length < initial_calf_length * 0.9:
             warning_frames.append(frame)
 
     return warning_frames
@@ -140,5 +149,47 @@ def check_bench(angles):
     return warning_frames
 
 
-def check_deadlift(angles):
-    pass
+def check_deadlift(coords, angles):
+    warning_frames = []
+
+    start_y_pos = coords["wrist"][0].y
+    start_index = 0
+
+    end_y_pos = coords["wrist"][-1].y
+    end_index = -1
+    for i in range(len(coord["wrist"])):
+        coord = coords["wrist"][i]
+        if coord.y < start_y_pos:
+            start_y_pos = coord.y
+            start_index = i
+    for i in range(len(coord["wrist"]) - 1, 0, -1):
+        coord = coords["arm"][i]
+        if coord.y > end_y_pos:
+            end_y_pos = coord.y
+            end_index = i
+
+    # Check for back compression
+    initial_back_length = np.linalg.norm(
+        np.array(coords["shoulder"][start_index].x) - coords["hip"][start_index].x,
+        np.array(coords["shoulder"][start_index].y) - coords["hip"][start_index].y,
+    )
+
+    # Determine facing direction of user
+    facing_left = 0
+    if (coords["knee"][start_index].x < coords["ankle"[start_index].x]):
+        facing_left = 1
+    for frame in range(start_index + 1, end_index):
+        hip_angle = angles["hip"][frame]
+        knee_angle = angles["knee"][frame]
+
+        ratio = knee_angle / hip_angle
+
+        back_length = np.linalg.norm(
+            np.array(coords["shoulder"][frame].x) - coords["hip"][frame].x,
+            np.array(coords["shoulder"][frame].y) - coords["hip"][frame].y,
+        )
+
+        margin_error = back_length / 5
+        if (back_length < initial_back_length * 0.9 or ratio > DEADLIFT_UPPER_WARNING_RATIO or ratio < DEADLIFT_LOWER_WARNING_RATIO or (coords["shoulder"][frame].x < coords["hip"][frame].x - margin_error and facing_left == 0) or (coords["shoulder"][frame].x > coords["hip"][frame].x + margin_error and facing_left == 1)):
+            warning_frames.append(frame)
+    return warning_frames
