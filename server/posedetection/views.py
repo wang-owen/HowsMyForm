@@ -58,7 +58,7 @@ def check_form(request):
         if movement == "bench":
             warning_frames = util.check_bench(angles)
         if movement == "deadlift":
-            warning_frames = util.check_deadlift(angles)
+            warning_frames = util.check_deadlift(coords, angles)
 
         return Response(
             status=status.HTTP_200_OK, data={"warning_frames": warning_frames}
