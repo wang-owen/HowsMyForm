@@ -1,11 +1,11 @@
 import { useState } from "react";
-import logo from "./assets/logo.png";  // Import the logo image
+import logo from "./assets/logo.png"; // Import the logo image
 
 const UploadForm = () => {
     const [file, setFile] = useState(null);
     const [fileName, setFileName] = useState(""); // State for the name of the uploaded file
     const [dragActive, setDragActive] = useState(false);
-    const [movement, setMovement] = useState("");  // State for selected movement
+    const [movement, setMovement] = useState(""); // State for selected movement
 
     // Handles file drop
     const handleDrop = (e) => {
@@ -15,7 +15,7 @@ const UploadForm = () => {
 
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
             const selectedFile = e.dataTransfer.files[0];
-            setFile(selectedFile);  // Capture the dropped file
+            setFile(selectedFile); // Capture the dropped file
             setFileName(selectedFile.name); // Store the name of the dropped file
         }
     };
@@ -38,19 +38,19 @@ const UploadForm = () => {
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
             const selectedFile = e.target.files[0];
-            setFile(selectedFile);  // Capture the selected file
+            setFile(selectedFile); // Capture the selected file
             setFileName(selectedFile.name); // Store the name of the selected file
         }
     };
 
     // Handles movement selection
     const handleMovementChange = (e) => {
-        setMovement(e.target.value);  // Capture the selected movement
+        setMovement(e.target.value); // Capture the selected movement
     };
 
     // Handles form submission
     const handleSubmit = async (e) => {
-        e.preventDefault();  // Prevent default form submission
+        e.preventDefault(); // Prevent default form submission
 
         if (!file) {
             alert("Please upload a video file.");
@@ -58,8 +58,8 @@ const UploadForm = () => {
         }
 
         const formData = new FormData();
-        formData.append("video-upload", file);  // Append file to FormData
-        formData.append("movement", movement);   // Append selected movement to FormData
+        formData.append("video-upload", file); // Append file to FormData
+        formData.append("movement", movement); // Append selected movement to FormData
 
         try {
             const response = await fetch("http://127.0.0.1:8000/check-form", {
@@ -80,45 +80,32 @@ const UploadForm = () => {
     return (
         <div
             id="root"
-            className="flex flex-col justify-center items-center h-screen space-y-10 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 font-sans text-white"
+            className="flex flex-col justify-center items-center h-screen space-y-10 bg-gradient-to-r from-blue-300 via-blue-400 to-blue-500 font-sans text-white" // Updated to a lighter blue gradient
         >
-            <div className="absolute top-4 right-4">
-                <img src={logo} alt="Logo" className="h-16 w-auto" />  {/* Updated image source */}
+            <div className="absolute top-4 left-4">
+                <img src={logo} alt="Logo" className="h-32 w-auto" style={{ display: 'block' }} /> {/* Removed any border */}
             </div>
-            <h1 className="text-5xl">How's My Form?</h1>
-            <p className="text-2xl text-center max-w-lg">
-                Upload a video of your workout, and we'll analyze your form to
-                help you improve!
+            <h1 className="text-7xl font-extrabold text-center">How's My Form?</h1> {/* No jumping title */}
+            <p className="text-xl text-center max-w-xl">
+                Upload a video of your workout, and we'll analyze your form to help you improve!
             </p>
-            <form onSubmit={handleSubmit} className="flex flex-col items-center space-y-6">
-                {/* Dropdown for movement selection */}
-                <select
-                    value={movement}
-                    onChange={handleMovementChange}
-                    className="bg-white text-gray-800 p-3 rounded-md border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                >
-                    <option value="" disabled>Select your movement</option>
-                    <option value="bench">Bench Press</option>
-                    <option value="squat">Squat</option>
-                    <option value="deadlift">Deadlift</option>
-                </select>
+            <form onSubmit={handleSubmit} className="flex flex-col items-center space-y-6 w-full max-w-md">
                 <div
-                    className={`border-4 border-solid border-white p-10 w-96 text-center cursor-pointer rounded-lg transition-transform duration-300 ${
-                        dragActive ? "bg-white bg-opacity-20" : "bg-opacity-10"
+                    className={`border-4 border-dashed border-white p-10 w-full text-center cursor-pointer rounded-lg transition-transform duration-300 transform hover:scale-105 ${
+                        dragActive ? "bg-white bg-opacity-20" : "bg-white bg-opacity-10"
                     }`}
-                    onDragOver={handleDragOver}    // Activate drag over event
-                    onDragLeave={handleDragLeave}  // Activate drag leave event
-                    onDrop={handleDrop}            // Handle file drop
+                    onDragOver={handleDragOver} // Activate drag over event
+                    onDragLeave={handleDragLeave} // Activate drag leave event
+                    onDrop={handleDrop} // Handle file drop
                     onClick={() => document.getElementById("video-upload").click()} // Click to open file input
                 >
                     {/* Conditionally display uploaded video name or upload logo text */}
                     {fileName ? (
-                        <p className="text-white mt-2">Uploaded Video: "{fileName}"</p>
+                        <p className="text-white mt-2 font-semibold">Uploaded Video: "{fileName}"</p>
                     ) : (
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="h-12 w-12 mx-auto text-white opacity-70"
+                            className="h-20 w-20 mx-auto text-white opacity-80" // Increased icon size
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -137,12 +124,24 @@ const UploadForm = () => {
                     id="video-upload"
                     name="video-upload"
                     accept="video/*"
-                    className="hidden"  // Hide the file input field
-                    onChange={handleFileChange}  // Handle file selection
+                    className="hidden" // Hide the file input field
+                    onChange={handleFileChange} // Handle file selection
                 />
+                {/* Dropdown for movement selection */}
+                <select
+                    value={movement}
+                    onChange={handleMovementChange}
+                    className="bg-white text-gray-800 p-3 rounded-md shadow-md transition duration-200 ease-in-out hover:bg-gray-100"
+                    required
+                >
+                    <option value="" disabled>Select your movement</option>
+                    <option value="bench">Bench Press</option>
+                    <option value="squat">Squat</option>
+                    <option value="deadlift">Deadlift</option>
+                </select>
                 <button
                     type="submit"
-                    className="bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-6 text-lg rounded-lg shadow-lg transition-transform duration-300 hover:scale-105 hover:shadow-xl"
+                    className="bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-6 text-lg rounded-lg shadow-lg transition-transform duration-300 hover:scale-105 hover:shadow-xl transform hover:bg-blue-600"
                 >
                     Submit
                 </button>
