@@ -90,6 +90,19 @@ const UploadForm = () => {
                 Upload a video of your workout, and we'll analyze your form to help you improve!
             </p>
             <form onSubmit={handleSubmit} className="flex flex-col items-center space-y-6 w-full max-w-md">
+                {/* Dropdown for movement selection */}
+                <select
+                    value={movement}
+                    onChange={handleMovementChange}
+                    className="bg-white text-gray-800 p-3 rounded-md shadow-md transition duration-200 ease-in-out hover:bg-gray-100"
+                    required
+                >
+                    <option value="" disabled>Select your movement</option>
+                    <option value="bench">Bench Press</option>
+                    <option value="squat">Squat</option>
+                    <option value="deadlift">Deadlift</option>
+                </select>
+
                 <div
                     className={`border-4 border-dashed border-white p-10 w-full text-center cursor-pointer rounded-lg transition-transform duration-300 transform hover:scale-105 ${
                         dragActive ? "bg-white bg-opacity-20" : "bg-white bg-opacity-10"
@@ -127,18 +140,6 @@ const UploadForm = () => {
                     className="hidden" // Hide the file input field
                     onChange={handleFileChange} // Handle file selection
                 />
-                {/* Dropdown for movement selection */}
-                <select
-                    value={movement}
-                    onChange={handleMovementChange}
-                    className="bg-white text-gray-800 p-3 rounded-md shadow-md transition duration-200 ease-in-out hover:bg-gray-100"
-                    required
-                >
-                    <option value="" disabled>Select your movement</option>
-                    <option value="bench">Bench Press</option>
-                    <option value="squat">Squat</option>
-                    <option value="deadlift">Deadlift</option>
-                </select>
                 <button
                     type="submit"
                     className="bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-6 text-lg rounded-lg shadow-lg transition-transform duration-300 hover:scale-105 hover:shadow-xl transform hover:bg-blue-600"
