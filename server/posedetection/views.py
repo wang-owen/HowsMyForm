@@ -13,14 +13,15 @@ def check_form(request):
     # Get file from request body video-upload
     if request.method == "POST":
         # Get the uploaded file
-        file = request.FILES.get("file")
+        file = request.FILES.get("video-upload")
 
         if file:
             # Save the file
             file_name = default_storage.save(
-                f"uploads/{file.name}", ContentFile(file.read())
+                f"posedetection/uploads/{file.name}", ContentFile(file.read())
             )
-            file_url = default_storage.url(file_name)
+            # get path of file url after saving
+            file_url = "/".join(default_storage.url(file_name).split("/")[1:])
 
             movement = request.data["movement"]
 
@@ -30,60 +31,51 @@ def check_form(request):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            keypoints = util.get_keypoints(file_url)
+            keypoints = util.get_keypoints(file_url)  # Get keypoints for each frame
 
-            if keypoints:
-                angles = defaultdict(list)
-                coords = defaultdict(list)
-                for keypoint in keypoints:
-                    shoulder = util.get_average_xy(
-                        keypoint.xy[LEFT_SHOULDER], keypoint.xy[RIGHT_SHOULDER]
-                    )
-                    coords["shoulder"].append(shoulder)
+            angles = defaultdict(list)
+            coords = defaultdict(list)
+            for keypoint in keypoints:
+                xy = keypoint.xy[0]
 
-                    elbow = util.get_average_xy(
-                        keypoint.xy[LEFT_ELBOW], keypoint.xy[RIGHT_ELBOW]
-                    )
-                    coords["elbow"].append(elbow)
+                shoulder = util.get_average_xy(xy[LEFT_SHOULDER], xy[RIGHT_SHOULDER])
+                coords["shoulder"].append(shoulder)
 
-                    wrist = util.get_average_xy(
-                        keypoint.xy[LEFT_WRIST], keypoint.xy[RIGHT_WRIST]
-                    )
-                    coords["wrist"].append(wrist)
+                elbow = util.get_average_xy(xy[LEFT_ELBOW], xy[RIGHT_ELBOW])
+                coords["elbow"].append(elbow)
 
-                    hip = util.get_average_xy(
-                        keypoint.xy[LEFT_HIP], keypoint.xy[RIGHT_HIP]
-                    )
-                    coords["hip"].append(hip)
+                wrist = util.get_average_xy(xy[LEFT_WRIST], xy[RIGHT_WRIST])
+                coords["wrist"].append(wrist)
 
-                    knee = util.get_average_xy(
-                        keypoint.xy[LEFT_KNEE], keypoint.xy[RIGHT_KNEE]
-                    )
-                    coords["knee"].append(knee)
+                hip = util.get_average_xy(xy[LEFT_HIP], xy[RIGHT_HIP])
+                coords["hip"].append(hip)
 
-                    ankle = util.get_average_xy(
-                        keypoint.xy[RIGHT_ANKLE], keypoint.xy[RIGHT_ANKLE]
-                    )
-                    coords["ankle"].append(ankle)
+                knee = util.get_average_xy(xy[LEFT_KNEE], xy[RIGHT_KNEE])
+                coords["knee"].append(knee)
 
-                    angles["hip"].append(util.calculate_angle(shoulder, hip, knee))
-                    angles["shoulder"].append(
-                        util.calculate_angle(hip, shoulder, elbow)
-                    )
-                    angles["knee"].append(util.calculate_angle(hip, knee, ankle))
-                    angles["arm"].append(util.calculate_angle(shoulder, elbow, wrist))
+                ankle = util.get_average_xy(xy[RIGHT_ANKLE], xy[RIGHT_ANKLE])
+                coords["ankle"].append(ankle)
 
-                warning_frames = []
-                if movement == "squat":
-                    warning_frames = util.check_squat(coords, angles)
-                if movement == "bench":
-                    warning_frames = util.check_bench(angles)
-                if movement == "deadlift":
-                    warning_frames = util.check_deadlift(angles)
+                angles["hip"].append(util.calculate_angle(shoulder, hip, knee))
+                angles["shoulder"].append(util.calculate_angle(hip, shoulder, elbow))
+                angles["knee"].append(util.calculate_angle(hip, knee, ankle))
+                angles["arm"].append(util.calculate_angle(shoulder, elbow, wrist))
 
+            if movement == "squat":
                 return Response(
-                    status=status.HTTP_200_OK, data={"warning_frames": warning_frames}
+                    status=status.HTTP_200_OK,
+                    data={"warning_frames": util.check_squat(coords, angles)},
+                )
+            if movement == "bench":
+                return Response(
+                    status=status.HTTP_200_OK,
+                    data={"warning_frames": util.check_bench(coords)},
+                )
+            if movement == "deadlift":
+                return Response(
+                    status=status.HTTP_200_OK,
+                    data={"warning_frames": util.check_deadlift(angles)},
                 )
     return Response(
-        {"message": "No keypoints found"}, status=status.HTTP_400_BAD_REQUEST
+        {"message": "No keypoint found"}, status=status.HTTP_400_BAD_REQUEST
     )
