@@ -83,11 +83,14 @@ def check_squat(coords, angles):
         if 180 - angle < start_angle:
             start_angle = angle
             start_index = i
-    for i in range(len(angles["hip"]) - 1, 0, -1):
-        angle = angles["hip"][i]
-        if 180 - angle < end_angle:
-            end_angle = angle
-            end_index = i
+    if start_index = len(angles["hip"]) - 1:
+        end_index = i
+    else:
+        for i in range(len(angles["hip"]) - 1, start_index + 1, -1):
+            angle = angles["hip"][i]
+            if 180 - angle < end_angle:
+                end_angle = angle
+                end_index = i
 
     initial_back_length = np.linalg.norm(
         np.array(coords["shoulder"][start_index].x) - coords["hip"][start_index].x,
@@ -155,19 +158,12 @@ def check_deadlift(coords, angles):
     start_y_pos = coords["wrist"][0].y
     start_index = 0
 
-    end_y_pos = coords["wrist"][-1].y
-    end_index = -1
     for i in range(len(coord["wrist"])):
         coord = coords["wrist"][i]
-        if coord.y < start_y_pos:
+        if coord.y > start_y_pos:
             start_y_pos = coord.y
             start_index = i
-    for i in range(len(coord["wrist"]) - 1, 0, -1):
-        coord = coords["arm"][i]
-        if coord.y > end_y_pos:
-            end_y_pos = coord.y
-            end_index = i
-
+            
     # Check for back compression
     initial_back_length = np.linalg.norm(
         np.array(coords["shoulder"][start_index].x) - coords["hip"][start_index].x,
@@ -178,7 +174,7 @@ def check_deadlift(coords, angles):
     facing_left = 0
     if (coords["knee"][start_index].x < coords["ankle"[start_index].x]):
         facing_left = 1
-    for frame in range(start_index + 1, end_index):
+    for frame in range(coords["knee"]):
         hip_angle = angles["hip"][frame]
         knee_angle = angles["knee"][frame]
 
