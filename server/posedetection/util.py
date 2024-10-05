@@ -1,6 +1,5 @@
 from ultralytics import YOLO
 import numpy as np
-from headers import *
 
 
 class Coord:
@@ -102,7 +101,7 @@ def check_squat(coords, angles):
             np.array(coords["shoulder"][frame].x) - coords["hip"][frame].x,
             np.array(coords["shoulder"][frame].y) - coords["hip"][frame].y,
         )
-        if ratio > SQUAT_WARNING_RATIO or back_length < initial_back_length * 0.9:
+        if ratio > 1.5 or back_length < initial_back_length * 0.9:
             warning_frames.append(frame)
 
     return warning_frames

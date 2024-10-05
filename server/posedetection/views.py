@@ -1,13 +1,15 @@
-from rest_framework.response import Response
-from rest_framework import status
-from . import util
-from headers import *
 from collections import defaultdict
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from . import util
+from .headers import *
 
 
+@api_view(["POST"])
 def check_form(request):
-    # Get file from request body
-    file = request.data["file"]
+    # Get file from request body video-upload
+    file = request.FILES["video-upload"]
     movement = request.data["movement"]
 
     if movement not in ["bench", "squat", "deadlift"]:
