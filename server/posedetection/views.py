@@ -1,4 +1,5 @@
 from collections import defaultdict
+from django.http import FileResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from rest_framework import status
@@ -31,7 +32,8 @@ def check_form(request):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            keypoints = util.get_keypoints(file_url)  # Get keypoints for each frame
+            estimation = util.get_pose_estimation(file_url)
+            keypoints = estimation[1]
 
             angles = defaultdict(list)
             coords = defaultdict(list)
@@ -74,7 +76,10 @@ def check_form(request):
             if movement == "deadlift":
                 return Response(
                     status=status.HTTP_200_OK,
-                    data={"warning_frames": util.check_deadlift(angles)},
+                    data={
+                        "presigned_url": estimation[0],
+                        "warning_frames": util.check_deadlift(angles),
+                    },
                 )
     return Response(
         {"message": "No keypoint found"}, status=status.HTTP_400_BAD_REQUEST
