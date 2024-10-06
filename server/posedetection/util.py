@@ -67,8 +67,7 @@ def get_pose_estimation(file):
         exist_ok=True,
     )
     file_name = file.split("/")[-1]
-    file_stem = file_name.split(".")[0]
-    url = upload_video(f"posedetection/predict/{file_stem}.mp4", "howsmyform")
+    url = upload_video(f"posedetection/predict/{file_name}", "howsmyform")
 
     # Process the results
     keypoints = []
