@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import logo from "./assets/logo.png"; // Import the logo image
+import chatbot from "./assets/chatbot.png"; // Import the logo image
+import Chadbot from "./components/Chadbot";
 
 const App = () => {
     const [file, setFile] = useState(null);
@@ -15,6 +17,7 @@ const App = () => {
     const [videoUrl, setVideoUrl] = useState(""); // State for video URL
     const lastFramePaused = useRef(-1); // State for last frame paused
     const [pauseButton, setPauseButton] = useState("Play");
+    const [showChadbot, setShowChadbot] = useState(false);
 
     const buttonClass =
         "bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-6 text-lg rounded-lg shadow-lg transition-transform duration-300 hover:scale-105 hover:shadow-xl transform hover:bg-blue-600";
@@ -368,6 +371,13 @@ const App = () => {
                             Submit
                         </button>
                     </form>
+                    {showChadbot && <Chadbot />}
+                    <button
+                        className="place-self-end w-20 hover:opacity-90 duration-300 hover:scale-105"
+                        onClick={() => setShowChadbot(!showChadbot)}
+                    >
+                        <img src={chatbot} className="rounded-full" />
+                    </button>
                 </>
             )}
         </div>
