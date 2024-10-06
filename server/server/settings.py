@@ -34,6 +34,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 INSTALLED_APPS = [
     "posedetection",
+    "chadbot",
     "rest_framework",
     "corsheaders",
     "django.contrib.admin",
