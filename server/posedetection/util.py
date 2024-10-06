@@ -36,16 +36,12 @@ def get_average_xy(a, b):
 
 
 def upload_video(file_path, bucket_name, object_name=None):
-    R2_ACCESS_KEY_ID_id = os.environ.get("R2_ACCESS_KEY_ID")
-    r2_secret_access_key = os.environ.get("R2_SECRET_ACCESS_KEY")
-    r2_endpoint_url = os.environ.get("R2_CONNECTION_URL")
-
     # Create a session using the R2 credentials
     s3_client = boto3.Session().client(
         service_name="s3",
-        aws_access_key_id=R2_ACCESS_KEY_ID_id,
-        aws_secret_access_key=r2_secret_access_key,
-        endpoint_url=r2_endpoint_url,
+        aws_access_key_id=os.environ.get("R2_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.environ.get("R2_SECRET_ACCESS_KEY"),
+        endpoint_url=os.environ.get("R2_CONNECTION_URL"),
     )
 
     # If no object name is specified, use the file name
@@ -53,12 +49,7 @@ def upload_video(file_path, bucket_name, object_name=None):
         object_name = file_path.split("/")[-1]
 
     s3_client.upload_file(file_path, bucket_name, object_name)
-    response = s3_client.generate_presigned_url(
-        "get_object",
-        Params={"Bucket": "howsmyform", "Key": object_name},
-        ExpiresIn=3600,
-    )
-    return response
+    return f"{os.environ.get('R2_PUBLIC_ENDPOINT')}/{bucket_name}/{object_name}"
 
 
 def get_pose_estimation(file):
@@ -77,13 +68,13 @@ def get_pose_estimation(file):
     )
     file_name = file.split("/")[-1]
     file_stem = file_name.split(".")[0]
-    signed_url = upload_video(f"posedetection/predict/{file_stem}.mp4", "howsmyform")
+    url = upload_video(f"posedetection/predict/{file_stem}.mp4", "howsmyform")
 
     # Process the results
     keypoints = []
     for result in results:
         keypoints.append(result.keypoints)  # Keypoints object for pose outputs
-    return signed_url, keypoints
+    return url, keypoints
 
 
 def check_squat(coords, angles):
