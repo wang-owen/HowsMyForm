@@ -11,7 +11,7 @@ const App = () => {
 
     const [warningFrames, setWarningFrames] = useState([]); // State for warning frames
     const [warningMessages, setWarningMessages] = useState<string[]>([]);
-    const [displayMessages, setDisplayMessages] = useState<string[]>([]);
+    const warningIndex = useRef(-1); // State for warning index
     const [videoUrl, setVideoUrl] = useState(""); // State for video URL
     const lastFramePaused = useRef(-1); // State for last frame paused
     const [pauseButton, setPauseButton] = useState("Play");
@@ -112,15 +112,11 @@ const App = () => {
                     const warningFrame = warningFrames[i];
                     if (
                         warningFrame !== lastFramePaused.current &&
+                        warningFrame > lastFramePaused.current &&
                         currentTime >= warningFrame / 30
                     ) {
                         videoElement.pause();
-                        setDisplayMessages([
-                            ...displayMessages,
-                            `WARNING: ${warningMessages[i]} at ${
-                                Math.round(currentTime * 100) / 100
-                            }s`,
-                        ]);
+                        warningIndex.current = i;
                         setPauseButton("Play");
                         lastFramePaused.current = warningFrame;
                     }
@@ -129,7 +125,7 @@ const App = () => {
             // Add the timeupdate event listener
             videoElement.addEventListener("timeupdate", checkWarningFrames);
             videoElement.addEventListener("ended", () => {
-                setPauseButton("Play");
+                setPauseButton("Restart");
                 lastFramePaused.current = -1;
             });
 
@@ -139,12 +135,33 @@ const App = () => {
                     "timeupdate",
                     checkWarningFrames
                 );
-                videoElement.removeEventListener("ended", () =>
-                    setPauseButton("Play")
-                );
+                videoElement.removeEventListener("ended", () => {
+                    setPauseButton("Restart");
+                    lastFramePaused.current = -1;
+                });
             };
         }
     }, [videoUrl]); // Run this effect when videoUrl changes
+
+    const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
+    const sentences = [
+        "Stocking up on creatine...",
+        "Making a protein shake...",
+        "Racking the weights...",
+        "Adjusting the bench...",
+        "Warming up...",
+        "Hydrating...",
+    ];
+
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            setCurrentSentenceIndex(
+                (prevIndex) => (prevIndex + 1) % sentences.length
+            );
+        }, 2000);
+
+        return () => clearInterval(intervalId); // Clean up on component unmount
+    }, [sentences.length]);
 
     return (
         <div
@@ -184,17 +201,29 @@ const App = () => {
                                     />
                                     <div className="p-8 border-2 border-black rounded-2xl bg-[#1e1e1e] min-w-96">
                                         <ul>
-                                            {displayMessages.length > 0 ? (
-                                                displayMessages.map(
-                                                    (message, index) => (
+                                            {warningMessages.length > 0 ? (
+                                                // Display warning messages up to the current warning index
+                                                warningMessages
+                                                    .slice(
+                                                        0,
+                                                        warningIndex.current + 1
+                                                    )
+                                                    .map((message, index) => (
                                                         <li
                                                             key={index}
                                                             className="bg-[#4187f5] rounded-2xl py-1 px-2 my-8"
                                                         >
-                                                            {message}
+                                                            {message} at{" "}
+                                                            {Math.round(
+                                                                (warningFrames[
+                                                                    index
+                                                                ] /
+                                                                    30) *
+                                                                    100
+                                                            ) / 100}
+                                                            s
                                                         </li>
-                                                    )
-                                                )
+                                                    ))
                                             ) : (
                                                 <p className="text-gray-400 py-1 px-2 my-8">
                                                     No warnings to show
@@ -212,6 +241,14 @@ const App = () => {
                                 const videoElement = document.getElementById(
                                     "pose-video"
                                 ) as HTMLVideoElement;
+                                if (pauseButton === "Restart") {
+                                    videoElement.currentTime = 0;
+                                    videoElement.play();
+                                    setPauseButton("Pause");
+                                    lastFramePaused.current = -1;
+                                    warningIndex.current = -1;
+                                    return;
+                                }
                                 if (videoElement && videoElement.paused) {
                                     videoElement.play();
                                     setPauseButton("Pause");
@@ -235,19 +272,30 @@ const App = () => {
                                     setPauseButton("Play");
                                 }
                                 lastFramePaused.current = -1;
-                                setWarningMessages([]);
-                                setDisplayMessages([]);
+                                warningIndex.current = -1;
                             }}
                             className={buttonClass}
                         >
                             Loop
+                        </button>
+                        <button
+                            onClick={() => {
+                                lastFramePaused.current = -1;
+                                warningIndex.current = -1;
+                                setIsComplete(false);
+                            }}
+                            className={buttonClass}
+                        >
+                            Reset
                         </button>
                     </div>
                 </div>
             ) : isSubmitting ? (
                 <div className="flex flex-col items-center space-y-8">
                     <div className="w-16 h-16 border-4 border-t-4 border-white rounded-full animate-spin"></div>
-                    <p className="text-2xl">Analyzing your video...</p>
+                    <p className="text-2xl">
+                        {sentences[currentSentenceIndex]}
+                    </p>
                 </div>
             ) : (
                 <>
@@ -257,7 +305,7 @@ const App = () => {
                     </p>
                     <form
                         onSubmit={handleSubmit}
-                        className="flex flex-col items-center space-y-6 w-full max-w-md"
+                        className="flex flex-col items-center space-y-10 w-full max-w-md"
                     >
                         {/* Dropdown for movement selection */}
                         <select
