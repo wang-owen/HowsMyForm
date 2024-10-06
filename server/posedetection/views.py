@@ -35,8 +35,15 @@ def check_form(request):
 
             angles = defaultdict(list)
             coords = defaultdict(list)
+            indiv_coords = defaultdict(list)
             for keypoint in keypoints:
                 xy = keypoint.xy[0]
+
+                indiv_coords["left_shoulder"] = xy[LEFT_SHOULDER]
+                indiv_coords["right_shoulder"] = xy[RIGHT_SHOULDER]
+
+                indiv_coords["left_elbow"] = xy[LEFT_ELBOW]
+                indiv_coords["right_elbow"] = xy[RIGHT_ELBOW]
 
                 shoulder = util.get_average_xy(xy[LEFT_SHOULDER], xy[RIGHT_SHOULDER])
                 coords["shoulder"].append(shoulder)
@@ -69,7 +76,7 @@ def check_form(request):
             if movement == "bench":
                 return Response(
                     status=status.HTTP_200_OK,
-                    data={"warning_frames": util.check_bench(coords)},
+                    data={"warning_frames": util.check_bench(angles, coords, indiv_coords)},
                 )
             if movement == "deadlift":
                 return Response(
