@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import logo from "./assets/logo.png"; // Import the logo image
 
-const UploadForm = () => {
+const App = () => {
     const [file, setFile] = useState(null);
     const [fileName, setFileName] = useState(""); // State for the name of the uploaded file
     const [dragActive, setDragActive] = useState(false);
@@ -11,6 +11,8 @@ const UploadForm = () => {
 
     const [warningFrames, setWarningFrames] = useState([]); // State for warning frames
     const [videoUrl, setVideoUrl] = useState(""); // State for video URL
+    const lastFramePaused = useRef(-1); // State for last frame paused
+    const [pauseButton, setPauseButton] = useState("Play");
 
     // Handles file drop
     const handleDrop = (event: any) => {
@@ -79,7 +81,6 @@ const UploadForm = () => {
                 const data = await response.json();
                 setWarningFrames(data.warning_frames);
                 setVideoUrl(data.url);
-
                 setIsComplete(true);
             } else {
                 console.error("Upload failed.");
@@ -92,46 +93,116 @@ const UploadForm = () => {
         }
     };
 
+    // Effect to add the event listener for the video after it has been set
+    useEffect(() => {
+        const videoElement = document.getElementById(
+            "pose-video"
+        ) as HTMLVideoElement;
+
+        if (videoElement) {
+            // Check if the video time has reached or exceeded a warning frame
+            const checkWarningFrames = () => {
+                const currentTime = videoElement.currentTime;
+                for (const warningFrame of warningFrames) {
+                    if (
+                        warningFrame !== lastFramePaused.current &&
+                        currentTime >= warningFrame / 30
+                    ) {
+                        console.log(warningFrame);
+                        videoElement.pause();
+                        setPauseButton("Play");
+                        lastFramePaused.current = warningFrame;
+                    }
+                }
+            };
+            // Add the timeupdate event listener
+            videoElement.addEventListener("timeupdate", checkWarningFrames);
+
+            // Cleanup listener on unmount
+            return () => {
+                videoElement.removeEventListener(
+                    "timeupdate",
+                    checkWarningFrames
+                );
+            };
+        }
+    }, [videoUrl]); // Run this effect when videoUrl changes
+
     return (
         <div
             id="root"
-            className="flex flex-col justify-center items-center h-screen space-y-10 bg-gradient-to-r from-blue-300 via-blue-400 to-blue-500 font-sans text-white" // Updated to a lighter blue gradient
+            className="flex flex-col justify-center items-center h-screen space-y-10 bg-gradient-to-r from-blue-300 via-blue-400 to-blue-500 font-sans text-white"
         >
             <div className="absolute top-4 left-4">
-                <img
-                    src={logo}
-                    alt="Logo"
-                    className="h-32 w-auto"
-                    style={{ display: "block" }}
-                />{" "}
-                {/* Removed any border */}
+                <img src={logo} alt="Logo" className="h-32 w-auto" />
             </div>
             <h1 className="text-7xl font-extrabold text-center">
                 How's My Form?
-            </h1>{" "}
-            {/* No jumping title */}
+            </h1>
             {/* Check if analysis is complete */}
             {isComplete ? (
                 <div className="flex flex-col items-center space-y-4">
                     <p className="text-2xl">
-                        Analysis complete! Here are your warning frames:
+                        Analysis complete! You were using poor form in the
+                        following timestamps:
                     </p>
-                    <div className="flex flex-col items-center space-y-4">
-                        {warningFrames.map((frame: any, index: number) => (
-                            <h1 key={index} className="max-w-md w-full">
-                                {frame}
-                            </h1>
-                        ))}
-                    </div>
                     {videoUrl && (
-                        <video
-                            src={videoUrl}
-                            controls
-                            className="w-2/3 border-8 rounded-2xl"
-                            autoPlay
-                            muted
-                        ></video>
+                        <div>
+                            <div className="flex flex-col gap-8 items-center">
+                                <ul className="flex gap-4">
+                                    {warningFrames.map((frame, index) => (
+                                        <li key={index} className="font-bold">
+                                            {Math.round((frame / 30) * 100) /
+                                                100}
+                                            s
+                                        </li>
+                                    ))}
+                                </ul>
+                                <video
+                                    id="pose-video"
+                                    src={videoUrl}
+                                    className="border-8 max-h-[700px] rounded-2xl"
+                                    autoPlay
+                                    muted
+                                />
+                            </div>
+                        </div>
                     )}
+                    <div className="flex gap-8">
+                        <button
+                            onClick={() => {
+                                const videoElement = document.getElementById(
+                                    "pose-video"
+                                ) as HTMLVideoElement;
+                                if (videoElement && videoElement.paused) {
+                                    videoElement.play();
+                                    setPauseButton("Pause");
+                                } else {
+                                    videoElement.pause();
+                                    setPauseButton("Play");
+                                }
+                            }}
+                            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-6 text-lg rounded-lg shadow-lg transition-transform duration-300 hover:scale-105 hover:shadow-xl transform hover:bg-blue-600"
+                        >
+                            {pauseButton}
+                        </button>
+                        <button
+                            onClick={() => {
+                                const videoElement = document.getElementById(
+                                    "pose-video"
+                                ) as HTMLVideoElement;
+                                if (videoElement) {
+                                    videoElement.currentTime = 0;
+                                    videoElement.pause();
+                                    setPauseButton("Play");
+                                }
+                                lastFramePaused.current = -1;
+                            }}
+                            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-6 text-lg rounded-lg shadow-lg transition-transform duration-300 hover:scale-105 hover:shadow-xl transform hover:bg-blue-600"
+                        >
+                            Reset
+                        </button>
+                    </div>
                 </div>
             ) : isSubmitting ? (
                 <div className="flex flex-col items-center space-y-4">
@@ -169,14 +240,13 @@ const UploadForm = () => {
                                     ? "bg-white bg-opacity-20"
                                     : "bg-white bg-opacity-10"
                             }`}
-                            onDragOver={handleDragOver} // Activate drag over event
-                            onDragLeave={handleDragLeave} // Activate drag leave event
-                            onDrop={handleDrop} // Handle file drop
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
                             onClick={() =>
                                 document.getElementById("video-upload")?.click()
-                            } // Click to open file input
+                            }
                         >
-                            {/* Conditionally display uploaded video name or upload logo text */}
                             {fileName ? (
                                 <p className="text-white mt-2 font-semibold">
                                     Uploaded Video: "{fileName}"
@@ -184,7 +254,7 @@ const UploadForm = () => {
                             ) : (
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
-                                    className="h-20 w-20 mx-auto text-white opacity-80" // Increased icon size
+                                    className="h-20 w-20 mx-auto text-white opacity-80"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"
@@ -203,8 +273,8 @@ const UploadForm = () => {
                             id="video-upload"
                             name="video-upload"
                             accept="video/*"
-                            className="hidden" // Hide the file input field
-                            onChange={handleFileChange} // Handle file selection
+                            className="hidden"
+                            onChange={handleFileChange}
                         />
                         <button
                             type="submit"
@@ -219,4 +289,4 @@ const UploadForm = () => {
     );
 };
 
-export default UploadForm;
+export default App;

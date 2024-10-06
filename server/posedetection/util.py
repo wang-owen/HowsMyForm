@@ -111,7 +111,17 @@ def check_squat(coords, angles):
         if ratio > 1 or back_length < straight_back_length * 0.8:
             warning_frames.append(frame_i)
 
-    return warning_frames
+    # Remove warning frames within 0.5 seconds of one another
+    while True:
+        popped = False
+        for i in range(len(warning_frames) - 1):
+            if warning_frames[i + 1] - warning_frames[i] < 15:
+                warning_frames.pop(i)
+                popped = True
+                break
+
+        if not popped:
+            return warning_frames
 
 
 def check_bench(angles, coords, indiv_coords):
@@ -167,7 +177,17 @@ def check_bench(angles, coords, indiv_coords):
     ):
         warning_frames.append(bottom_index)
 
-    return warning_frames
+    # Remove warning frames within 0.5 seconds of one another
+    while True:
+        popped = False
+        for i in range(len(warning_frames) - 1):
+            if warning_frames[i + 1] - warning_frames[i] < 15:
+                warning_frames.pop(i)
+                popped = True
+                break
+
+        if not popped:
+            return warning_frames
 
 
 def check_deadlift(coords, angles):
@@ -183,8 +203,10 @@ def check_deadlift(coords, angles):
             straight_i = i
 
     initial_back_length = np.linalg.norm(
-        np.array(coords["shoulder"][straight_i].x) - coords["hip"][straight_i].x,
-        np.array(coords["shoulder"][straight_i].y) - coords["hip"][straight_i].y,
+        [
+            np.array(coords["shoulder"][straight_i][0]) - coords["hip"][straight_i][0],
+            np.array(coords["shoulder"][straight_i][1]) - coords["hip"][straight_i][1],
+        ]
     )
 
     # Determine facing direction of user
@@ -192,15 +214,17 @@ def check_deadlift(coords, angles):
     if coords["knee"][straight_i][0] < coords["ankle"[straight_i][0]]:
         facing_left = 1
 
-    for frame in range(coords["knee"]):
+    for frame in range(len(angles["hip"])):
         hip_angle = angles["hip"][frame]
         knee_angle = angles["knee"][frame]
 
         ratio = knee_angle / hip_angle
 
         back_length = np.linalg.norm(
-            np.array(coords["shoulder"][frame].x) - coords["hip"][frame].x,
-            np.array(coords["shoulder"][frame].y) - coords["hip"][frame].y,
+            [
+                coords["shoulder"][frame][0] - coords["hip"][frame][0],
+                coords["shoulder"][frame][1] - coords["hip"][frame][1],
+            ]
         )
 
         margin_error = back_length / 5
@@ -209,14 +233,24 @@ def check_deadlift(coords, angles):
             or ratio > 2
             or ratio < 1
             or (
-                coords["shoulder"][frame].x < coords["hip"][frame].x - margin_error
+                coords["shoulder"][frame][0] < (coords["hip"][frame][0] - margin_error)
                 and facing_left == 0
             )
             or (
-                coords["shoulder"][frame].x > coords["hip"][frame].x + margin_error
+                coords["shoulder"][frame][0] > (coords["hip"][frame][0] + margin_error)
                 and facing_left == 1
             )
         ):
             warning_frames.append(frame)
 
-    return warning_frames
+    # Remove warning frames within 0.5 seconds of one another
+    while True:
+        popped = False
+        for i in range(len(warning_frames) - 1):
+            if warning_frames[i + 1] - warning_frames[i] < 15:
+                warning_frames.pop(i)
+                popped = True
+                break
+
+        if not popped:
+            return warning_frames
