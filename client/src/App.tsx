@@ -77,7 +77,6 @@ const UploadForm = () => {
             if (response.ok) {
                 console.log("Video uploaded successfully!");
                 const data = await response.json();
-                console.log(data);
                 setWarningFrames(data.warning_frames);
                 setVideoUrl(data.url);
 
@@ -128,7 +127,9 @@ const UploadForm = () => {
                         <video
                             src={videoUrl}
                             controls
-                            className="max-w-md w-full"
+                            className="w-2/3 border-8 rounded-2xl"
+                            autoPlay
+                            muted
                         ></video>
                     )}
                 </div>
