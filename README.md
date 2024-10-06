@@ -1,3 +1,5 @@
+<div align="center"><img src="https://github.com/user-attachments/assets/ed2f3a59-3241-4d87-863f-c6a952f59a3c" /></div>
+
 ## Inspiration
 As important as maintaining one's health is, we wanted to create something to help those interested in weightlifting to jump straight into it without fear of injury with an app that detects and warns users of poor form during important compound lifts.
 
