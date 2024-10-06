@@ -70,29 +70,35 @@ def check_form(request):
                 angles["arm"].append(util.calculate_angle(shoulder, elbow, wrist))
 
             if movement == "squat":
+                warning_frames, warning_messages = util.check_squat(coords, angles)
                 return Response(
                     status=status.HTTP_200_OK,
                     data={
                         "url": estimation[0],
-                        "warning_frames": util.check_squat(coords, angles),
+                        "warning_frames": warning_frames,
+                        "warning_messages": warning_messages,
                     },
                 )
             if movement == "bench":
+                warning_frames, warning_messages = util.check_bench(
+                    angles, coords, indiv_coords
+                )
                 return Response(
                     status=status.HTTP_200_OK,
                     data={
                         "url": estimation[0],
-                        "warning_frames": util.check_bench(
-                            angles, coords, indiv_coords
-                        ),
+                        "warning_frames": warning_frames,
+                        "warning_messages": warning_messages,
                     },
                 )
             if movement == "deadlift":
+                warning_frames, warning_messages = util.check_deadlift(coords, angles)
                 return Response(
                     status=status.HTTP_200_OK,
                     data={
                         "url": estimation[0],
-                        "warning_frames": util.check_deadlift(coords, angles),
+                        "warning_frames": warning_frames,
+                        "warning_messages": warning_messages,
                     },
                 )
     return Response(

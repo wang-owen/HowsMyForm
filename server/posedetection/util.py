@@ -80,6 +80,7 @@ def get_pose_estimation(file):
 
 def check_squat(coords, angles):
     warning_frames = []
+    warning_messages = []
 
     straight_angle = angles["hip"][0]
     straight_i = 0
@@ -108,90 +109,92 @@ def check_squat(coords, angles):
                 (coords["shoulder"][frame_i][1]) - coords["hip"][frame_i][1],
             ]
         )
-        if ratio > 1 or back_length < straight_back_length * 0.8:
+        if ratio > 1:
+            warning_messages.append("Knees too far forward")
+            warning_frames.append(frame_i)
+        elif back_length < straight_back_length * 0.7:
+            warning_messages.append("Back too bent")
             warning_frames.append(frame_i)
 
     # Remove warning frames within 0.5 seconds of one another
     while True:
         popped = False
         for i in range(len(warning_frames) - 1):
-            if warning_frames[i + 1] - warning_frames[i] < 15:
-                warning_frames.pop(i)
+            if warning_frames[i + 1] - warning_frames[i] < 25:
+                warning_frames.pop(i + 1)
+                warning_messages.pop(i + 1)
                 popped = True
                 break
 
         if not popped:
-            return warning_frames
+            return warning_frames, warning_messages
 
 
 def check_bench(angles, coords, indiv_coords):
     warning_frames = []
+    warning_messages = []
 
     start_angle = angles["arm"][0]
     start_index = 0
 
-    bottom_pos_y = coords["elbow"][0][1]
-    bottom_index = 0
+    frame = 0
     for i in range(len(angles["arm"])):
         angle = angles["arm"][i]
-        y_pos = coords["elbow"][i][1]
         if 180 - angle < start_angle:
             start_angle = angle
             start_index = i
-        if y_pos > bottom_pos_y:
-            bottom_pos_y = y_pos
-            bottom_index = i
+            frame = i
 
-    straight_upper_arm = np.linalg.norm(
-        [
-            coords["elbow"][start_index][0] - coords["shoulder"][start_index][0],
-            coords["elbow"][start_index][1] - coords["shoulder"][start_index][1],
-        ]
+    shoulder_width = abs(
+        indiv_coords["right_shoulder"][start_index][0]
+        - indiv_coords["left_shoulder"][start_index][0]
     )
 
-    upper_arm_bound = straight_upper_arm * 0.95
-    lower_arm_bound = straight_upper_arm * 0.25
+    frames = []
+    for i in range(len(coords["elbow"])):
+        if coords["elbow"][i][1] >= coords["shoulder"][i][1]:
+            frames.append(i)
 
-    left_arm_length = np.linalg.norm(
-        [
-            indiv_coords["left_elbow"][bottom_index][0]
-            - indiv_coords["left_shoulder"][bottom_index][0],
-            indiv_coords["left_elbow"][bottom_index][1]
-            - indiv_coords["left_shoulder"][bottom_index][1],
-        ]
-    )
-    right_arm_length = np.linalg.norm(
-        [
-            indiv_coords["right_elbow"][bottom_index][0]
-            - indiv_coords["right_shoulder"][bottom_index][0],
-            indiv_coords["right_elbow"][bottom_index][1]
-            - indiv_coords["right_shoulder"][bottom_index][1],
-        ]
-    )
-
-    if (
-        left_arm_length > upper_arm_bound
-        or left_arm_length < lower_arm_bound
-        or right_arm_length > upper_arm_bound
-        or right_arm_length < lower_arm_bound
-    ):
-        warning_frames.append(bottom_index)
+    for frame in frames:
+        print(
+            abs(
+                indiv_coords["left_shoulder"][frame][0]
+                - indiv_coords["left_elbow"][frame][0]
+            )
+            / shoulder_width
+        )
+        if abs(
+            indiv_coords["left_shoulder"][frame][0]
+            - indiv_coords["left_elbow"][frame][0]
+        ) > shoulder_width * 0.8 or (
+            abs(
+                indiv_coords["right_shoulder"][frame][0]
+                - indiv_coords["right_elbow"][frame][0]
+            )
+            > shoulder_width * 0.8
+        ):
+            warning_messages.append(
+                "Elbows too far from body, try keeping them 45 degrees from torso"
+            )
+            warning_frames.append(frame)
 
     # Remove warning frames within 0.5 seconds of one another
     while True:
         popped = False
         for i in range(len(warning_frames) - 1):
-            if warning_frames[i + 1] - warning_frames[i] < 15:
-                warning_frames.pop(i)
+            if warning_frames[i + 1] - warning_frames[i] < 25:
+                warning_frames.pop(i + 1)
+                warning_messages.pop(i + 1)
                 popped = True
                 break
 
         if not popped:
-            return warning_frames
+            return warning_frames, warning_messages
 
 
 def check_deadlift(coords, angles):
     warning_frames = []
+    warning_messages = []
 
     straight_angle = angles["hip"][0]
     straight_i = 0
@@ -204,14 +207,14 @@ def check_deadlift(coords, angles):
 
     initial_back_length = np.linalg.norm(
         [
-            np.array(coords["shoulder"][straight_i][0]) - coords["hip"][straight_i][0],
-            np.array(coords["shoulder"][straight_i][1]) - coords["hip"][straight_i][1],
+            coords["shoulder"][straight_i][0] - coords["hip"][straight_i][0],
+            coords["shoulder"][straight_i][1] - coords["hip"][straight_i][1],
         ]
     )
 
     # Determine facing direction of user
     facing_left = 0
-    if coords["knee"][straight_i][0] < coords["ankle"[straight_i][0]]:
+    if coords["knee"][straight_i][0] < coords["ankle"][straight_i][0]:
         facing_left = 1
 
     for frame in range(len(angles["hip"])):
@@ -219,6 +222,7 @@ def check_deadlift(coords, angles):
         knee_angle = angles["knee"][frame]
 
         ratio = knee_angle / hip_angle
+        print(ratio)
 
         back_length = np.linalg.norm(
             [
@@ -228,29 +232,34 @@ def check_deadlift(coords, angles):
         )
 
         margin_error = back_length / 5
-        if (
-            back_length < initial_back_length * 0.8
-            or ratio > 2
-            or ratio < 1
-            or (
-                coords["shoulder"][frame][0] < (coords["hip"][frame][0] - margin_error)
-                and facing_left == 0
+        if back_length < initial_back_length * 0.7:
+            warning_messages.append("Make sure to keep your back straight")
+            warning_frames.append(frame)
+        elif (ratio > 3 or ratio < 0.7) and coords["hip"][frame][1] < coords["knee"][
+            frame
+        ][1] - margin_error:
+            warning_messages.append(
+                "Lift with your entire body, not just your legs or back"
             )
-            or (
-                coords["shoulder"][frame][0] > (coords["hip"][frame][0] + margin_error)
-                and facing_left == 1
-            )
+            warning_frames.append(frame)
+        elif (
+            coords["shoulder"][frame][0] < (coords["hip"][frame][0] - margin_error)
+            and facing_left == 0
+            or coords["shoulder"][frame][0] > (coords["hip"][frame][0] + margin_error)
+            and facing_left == 1
         ):
+            warning_messages.append("Make sure not to lean back too much")
             warning_frames.append(frame)
 
     # Remove warning frames within 0.5 seconds of one another
     while True:
         popped = False
         for i in range(len(warning_frames) - 1):
-            if warning_frames[i + 1] - warning_frames[i] < 15:
-                warning_frames.pop(i)
+            if warning_frames[i + 1] - warning_frames[i] < 25:
+                warning_frames.pop(i + 1)
+                warning_messages.pop(i + 1)
                 popped = True
                 break
 
         if not popped:
-            return warning_frames
+            return warning_frames, warning_messages
