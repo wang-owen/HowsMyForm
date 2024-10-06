@@ -40,11 +40,11 @@ def check_form(request):
             for keypoint in keypoints:
                 xy = keypoint.xy[0]
 
-                indiv_coords["left_shoulder"] = xy[LEFT_SHOULDER]
-                indiv_coords["right_shoulder"] = xy[RIGHT_SHOULDER]
+                indiv_coords["left_shoulder"].append(xy[LEFT_SHOULDER])
+                indiv_coords["right_shoulder"].append(xy[RIGHT_SHOULDER])
 
-                indiv_coords["left_elbow"] = xy[LEFT_ELBOW]
-                indiv_coords["right_elbow"] = xy[RIGHT_ELBOW]
+                indiv_coords["left_elbow"].append(xy[LEFT_ELBOW])
+                indiv_coords["right_elbow"].append(xy[RIGHT_ELBOW])
 
                 shoulder = util.get_average_xy(xy[LEFT_SHOULDER], xy[RIGHT_SHOULDER])
                 coords["shoulder"].append(shoulder)
@@ -82,7 +82,9 @@ def check_form(request):
                     status=status.HTTP_200_OK,
                     data={
                         "url": estimation[0],
-                        "warning_frames": util.check_bench(angles, coords, indiv_coords),
+                        "warning_frames": util.check_bench(
+                            angles, coords, indiv_coords
+                        ),
                     },
                 )
             if movement == "deadlift":
@@ -90,7 +92,7 @@ def check_form(request):
                     status=status.HTTP_200_OK,
                     data={
                         "url": estimation[0],
-                        "warning_frames": util.check_deadlift(angles),
+                        "warning_frames": util.check_deadlift(coords, angles),
                     },
                 )
     return Response(
