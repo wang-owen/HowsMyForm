@@ -10,9 +10,13 @@ const App = () => {
     const [isComplete, setIsComplete] = useState(false); // State for submission completion
 
     const [warningFrames, setWarningFrames] = useState([]); // State for warning frames
+    const [warningMessages, setWarningMessages] = useState<string[]>([]);
     const [videoUrl, setVideoUrl] = useState(""); // State for video URL
     const lastFramePaused = useRef(-1); // State for last frame paused
     const [pauseButton, setPauseButton] = useState("Play");
+
+    const buttonClass =
+        "bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-6 text-lg rounded-lg shadow-lg transition-transform duration-300 hover:scale-105 hover:shadow-xl transform hover:bg-blue-600";
 
     // Handles file drop
     const handleDrop = (event: any) => {
@@ -77,7 +81,6 @@ const App = () => {
             });
 
             if (response.ok) {
-                console.log("Video uploaded successfully!");
                 const data = await response.json();
                 setWarningFrames(data.warning_frames);
                 setVideoUrl(data.url);
@@ -108,8 +111,13 @@ const App = () => {
                         warningFrame !== lastFramePaused.current &&
                         currentTime >= warningFrame / 30
                     ) {
-                        console.log(warningFrame);
                         videoElement.pause();
+                        setWarningMessages([
+                            ...warningMessages,
+                            `WARNING: Poor form detected at ${
+                                Math.round(currentTime * 100) / 100
+                            }s`,
+                        ]);
                         setPauseButton("Play");
                         lastFramePaused.current = warningFrame;
                     }
@@ -131,11 +139,9 @@ const App = () => {
     return (
         <div
             id="root"
-            className="flex flex-col justify-center items-center h-screen space-y-10 bg-gradient-to-r from-blue-300 via-blue-400 to-blue-500 font-sans text-white"
+            className="flex flex-col items-center min-h-screen pb-24 px-10 space-y-10 bg-gradient-to-r from-blue-300 via-blue-400 to-blue-500 font-sans text-white"
         >
-            <div className="absolute top-4 left-4">
-                <img src={logo} alt="Logo" className="h-32 w-auto" />
-            </div>
+            <img src={logo} alt="Logo" className="h-64" />
             <h1 className="text-7xl font-extrabold text-center">
                 How's My Form?
             </h1>
@@ -158,13 +164,29 @@ const App = () => {
                                         </li>
                                     ))}
                                 </ul>
-                                <video
-                                    id="pose-video"
-                                    src={videoUrl}
-                                    className="border-8 max-h-[700px] rounded-2xl"
-                                    autoPlay
-                                    muted
-                                />
+                                <div className="flex gap-8">
+                                    <video
+                                        id="pose-video"
+                                        src={videoUrl}
+                                        className="border-8 max-h-[700px] rounded-2xl"
+                                        autoPlay
+                                        muted
+                                    />
+                                    <div className="p-8 border-2 border-black rounded-2xl bg-[#1e1e1e]">
+                                        <ul>
+                                            {warningMessages.map(
+                                                (message, index) => (
+                                                    <li
+                                                        key={index}
+                                                        className="bg-[#4187f5] rounded-2xl py-1 px-2 my-8"
+                                                    >
+                                                        {message}
+                                                    </li>
+                                                )
+                                            )}
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -182,7 +204,7 @@ const App = () => {
                                     setPauseButton("Play");
                                 }
                             }}
-                            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-6 text-lg rounded-lg shadow-lg transition-transform duration-300 hover:scale-105 hover:shadow-xl transform hover:bg-blue-600"
+                            className={buttonClass}
                         >
                             {pauseButton}
                         </button>
@@ -197,21 +219,22 @@ const App = () => {
                                     setPauseButton("Play");
                                 }
                                 lastFramePaused.current = -1;
+                                setWarningMessages([]);
                             }}
-                            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-6 text-lg rounded-lg shadow-lg transition-transform duration-300 hover:scale-105 hover:shadow-xl transform hover:bg-blue-600"
+                            className={buttonClass}
                         >
                             Reset
                         </button>
                     </div>
                 </div>
             ) : isSubmitting ? (
-                <div className="flex flex-col items-center space-y-4">
+                <div className="flex flex-col items-center space-y-8">
                     <div className="w-16 h-16 border-4 border-t-4 border-white rounded-full animate-spin"></div>
                     <p className="text-2xl">Analyzing your video...</p>
                 </div>
             ) : (
                 <>
-                    <p className="text-xl text-center max-w-xl">
+                    <p className="text-xl text-center max-w">
                         Upload a video of your workout, and we'll analyze your
                         form to help you improve!
                     </p>
@@ -223,13 +246,13 @@ const App = () => {
                         <select
                             value={movement}
                             onChange={handleMovementChange}
-                            className="bg-white text-gray-800 p-3 rounded-md shadow-md transition duration-200 ease-in-out hover:bg-gray-100"
+                            className="w-min p-2 text-lg bg-white text-black rounded-lg"
                             required
                         >
                             <option value="" disabled>
                                 Select your movement
                             </option>
-                            <option value="bench">Bench Press</option>
+                            <option value="bench">Bench</option>
                             <option value="squat">Squat</option>
                             <option value="deadlift">Deadlift</option>
                         </select>
@@ -276,10 +299,7 @@ const App = () => {
                             className="hidden"
                             onChange={handleFileChange}
                         />
-                        <button
-                            type="submit"
-                            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-6 text-lg rounded-lg shadow-lg transition-transform duration-300 hover:scale-105 hover:shadow-xl transform hover:bg-blue-600"
-                        >
+                        <button type="submit" className={buttonClass}>
                             Submit
                         </button>
                     </form>
