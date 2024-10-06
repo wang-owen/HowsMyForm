@@ -4,6 +4,7 @@ from ultralytics import YOLO
 import numpy as np
 import boto3
 from dotenv import load_dotenv
+from .headers import *
 
 load_dotenv()
 
@@ -112,9 +113,88 @@ def check_squat(coords, angles):
     return warning_frames
 
 
-def check_bench(coords):
-    pass
+def check_bench(angles, coords, indiv_coords):
+    UPPER_ANGLE_BOUND = 60
+    LOWER_ANGLE_BOUND = 30
 
+    warning_frames = []
 
-def check_deadlift(angles):
-    pass
+    start_angle = angles["arm"][0]
+    start_index = 0
+
+    bottom_pos = coords["elbow"][0]
+    bottom_index = 0
+    for i in range(len(angles["arm"])):
+        angle = angles["arm"][i]
+        pos = coords["elbow"][i]
+        if 180 - angle < start_angle:
+            start_angle = angle
+            start_index = i
+        if pos > bottom_pos:
+            bottom_pos = pos
+            bottom_index = i
+
+    straight_upper_arm = np.linalg.norm(
+        [
+            coords("elbow")[start_index][0] - coords("shoulder")[start_index][0],
+            coords("elbow")[start_index][1] - coords("shoulder")[start_index][1]
+        ]
+    )
+    upper_arm_bound = straight_upper_arm * 0.8
+    lower_arm_bound = straight_upper_arm * 0.4
+    left_arm_length = np.linalg.norm(
+        [
+            indiv_coords("left_elbow")[bottom_index][0] - indiv_coords("left_shoulder")[bottom_index][0],
+            indiv_coords("left_elbow")[bottom_index][1] - indiv_coords("left_shoulder")[bottom_index][1]
+        ]
+    )
+    right_arm_length = np.linalg.norm(
+        [
+            indiv_coords("right_elbow")[bottom_index][0] - indiv_coords("right_shoulder")[bottom_index][0],
+            indiv_coords("right_elbow")[bottom_index][1] - indiv_coords("right_shoulder")[bottom_index][1]
+        ]
+    )
+    if (left_arm_length > upper_arm_bound or left_arm_length < lower_arm_bound or 
+        right_arm_length > upper_arm_bound or right_arm_length < lower_arm_bound):
+        warning_frames.append(bottom_index)
+    
+    return warning_frames
+
+def check_deadlift(coords, angles):
+    warning_frames = []
+
+    straight_angle = angles["hip"][0]
+    straight_i = 0
+
+    for i in range(len(angles["hip"])):
+        angle = angles["hip"][i]
+        if 180 - angle < straight_angle:
+            straight_angle = angle
+            straight_i = i
+
+    initial_back_length = np.linalg.norm(
+        np.array(coords["shoulder"][straight_i].x) - coords["hip"][straight_i].x,
+        np.array(coords["shoulder"][straight_i].y) - coords["hip"][straight_i].y,
+    )
+
+     # Determine facing direction of user
+    facing_left = 0
+    if (coords["knee"][straight_i].x < coords["ankle"[straight_i].x]):
+        facing_left = 1
+        
+    for frame in range(coords["knee"]):
+        hip_angle = angles["hip"][frame]
+        knee_angle = angles["knee"][frame]
+
+        ratio = knee_angle / hip_angle
+
+        back_length = np.linalg.norm(
+            np.array(coords["shoulder"][frame].x) - coords["hip"][frame].x,
+            np.array(coords["shoulder"][frame].y) - coords["hip"][frame].y,
+        )
+
+        margin_error = back_length / 5
+        if (back_length < initial_back_length * 0.8 or ratio > DEADLIFT_UPPER_WARNING_RATIO or ratio < DEADLIFT_LOWER_WARNING_RATIO or (coords["shoulder"][frame].x < coords["hip"][frame].x - margin_error and facing_left == 0) or (coords["shoulder"][frame].x > coords["hip"][frame].x + margin_error and facing_left == 1)):
+            warning_frames.append(frame)
+    
+    return warning_frames
