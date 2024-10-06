@@ -4,6 +4,7 @@ from ultralytics import YOLO
 import numpy as np
 import boto3
 from dotenv import load_dotenv
+from .headers import *
 
 load_dotenv()
 
@@ -122,8 +123,52 @@ def check_squat(coords, angles):
     return warning_frames
 
 
-def check_bench(coords):
-    pass
+def check_bench(angles, coords, indiv_coords):
+    UPPER_ANGLE_BOUND = 60
+    LOWER_ANGLE_BOUND = 30
+
+    warning_frames = []
+
+    start_angle = angles["arm"][0]
+    start_index = 0
+
+    bottom_pos = coords["elbow"][0]
+    bottom_index = 0
+    for i in range(len(angles["arm"])):
+        angle = angles["arm"][i]
+        pos = coords["elbow"][i]
+        if 180 - angle < start_angle:
+            start_angle = angle
+            start_index = i
+        if pos > bottom_pos:
+            bottom_pos = pos
+            bottom_index = i
+
+    straight_upper_arm = np.linalg.norm(
+        [
+            coords("elbow")[start_index][0] - coords("shoulder")[start_index][0],
+            coords("elbow")[start_index][1] - coords("shoulder")[start_index][1]
+        ]
+    )
+    upper_arm_bound = straight_upper_arm * 0.8
+    lower_arm_bound = straight_upper_arm * 0.4
+    left_arm_length = np.linalg.norm(
+        [
+            indiv_coords("left_elbow")[bottom_index][0] - indiv_coords("left_shoulder")[bottom_index][0],
+            indiv_coords("left_elbow")[bottom_index][1] - indiv_coords("left_shoulder")[bottom_index][1]
+        ]
+    )
+    right_arm_length = np.linalg.norm(
+        [
+            indiv_coords("right_elbow")[bottom_index][0] - indiv_coords("right_shoulder")[bottom_index][0],
+            indiv_coords("right_elbow")[bottom_index][1] - indiv_coords("right_shoulder")[bottom_index][1]
+        ]
+    )
+    if (left_arm_length > upper_arm_bound or left_arm_length < lower_arm_bound or 
+        right_arm_length > upper_arm_bound or right_arm_length < lower_arm_bound):
+        warning_frames.append(bottom_index)
+    
+    return warning_frames
 
 def check_deadlift(coords, angles):
     warning_frames = []
