@@ -10,49 +10,49 @@ const UploadForm = () => {
     const [isComplete, setIsComplete] = useState(false); // State for submission completion
 
     // Handles file drop
-    const handleDrop = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const handleDrop = (event: any) => {
+        event.preventDefault();
+        event.stopPropagation();
         setDragActive(false);
 
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            const selectedFile = e.dataTransfer.files[0];
+        if (event.dataTransfer.files && event.dataTransfer.files[0]) {
+            const selectedFile = event.dataTransfer.files[0];
             setFile(selectedFile); // Capture the dropped file
             setFileName(selectedFile.name); // Store the name of the dropped file
         }
     };
 
     // Handles drag over event
-    const handleDragOver = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const handleDragOver = (event: any) => {
+        event.preventDefault();
+        event.stopPropagation();
         setDragActive(true);
     };
 
     // Handles drag leave event
-    const handleDragLeave = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const handleDragLeave = (event: any) => {
+        event.preventDefault();
+        event.stopPropagation();
         setDragActive(false);
     };
 
     // Handles file selection via the file input
-    const handleFileChange = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            const selectedFile = e.target.files[0];
+    const handleFileChange = (event: any) => {
+        if (event.target.files && event.target.files[0]) {
+            const selectedFile = event.target.files[0];
             setFile(selectedFile); // Capture the selected file
             setFileName(selectedFile.name); // Store the name of the selected file
         }
     };
 
     // Handles movement selection
-    const handleMovementChange = (e) => {
-        setMovement(e.target.value); // Capture the selected movement
+    const handleMovementChange = (event: any) => {
+        setMovement(event.target.value); // Capture the selected movement
     };
 
     // Handles form submission
-    const handleSubmit = async (e) => {
-        e.preventDefault(); // Prevent default form submission
+    const handleSubmit = async (event: any) => {
+        event.preventDefault(); // Prevent default form submission
 
         if (!file) {
             alert("Please upload a video file.");
@@ -66,14 +66,16 @@ const UploadForm = () => {
         formData.append("movement", movement); // Append selected movement to FormData
 
         try {
-            const response = await fetch("/random-endpoint", {
+            const response = await fetch("http://127.0.0.1:8000/check-form", {
                 method: "POST",
                 body: formData,
             });
 
             if (response.ok) {
                 console.log("Video uploaded successfully!");
-                // Set completion state to true when analysis is complete
+                const data = await response.json();
+                console.log(data);
+
                 setIsComplete(true);
             } else {
                 console.error("Upload failed.");
@@ -91,16 +93,21 @@ const UploadForm = () => {
             className="flex flex-col justify-center items-center h-screen space-y-10 bg-gradient-to-r from-blue-300 via-blue-400 to-blue-500 font-sans text-white" // Updated to a lighter blue gradient
         >
             <div className="absolute top-4 left-4">
-                <img src={logo} alt="Logo" className="h-32 w-auto" style={{ display: 'block' }} /> {/* Removed any border */}
+                <img
+                    src={logo}
+                    alt="Logo"
+                    className="h-32 w-auto"
+                    style={{ display: "block" }}
+                />{" "}
+                {/* Removed any border */}
             </div>
-            <h1 className="text-7xl font-extrabold text-center">How's My Form?</h1> {/* No jumping title */}
-
+            <h1 className="text-7xl font-extrabold text-center">
+                How's My Form?
+            </h1>{" "}
+            {/* No jumping title */}
             {/* Check if analysis is complete */}
             {isComplete ? (
-                <div className="flex flex-col items-center space-y-4">
-                    <h2 className="text-2xl font-bold">Video Critique Placeholder</h2>
-                    <p className="text-lg">Your video analysis will appear here.</p>
-                </div>
+                <div className="flex flex-col items-center space-y-4"></div>
             ) : isSubmitting ? (
                 <div className="flex flex-col items-center space-y-4">
                     <div className="w-16 h-16 border-4 border-t-4 border-white rounded-full animate-spin"></div>
@@ -109,9 +116,13 @@ const UploadForm = () => {
             ) : (
                 <>
                     <p className="text-xl text-center max-w-xl">
-                        Upload a video of your workout, and we'll analyze your form to help you improve!
+                        Upload a video of your workout, and we'll analyze your
+                        form to help you improve!
                     </p>
-                    <form onSubmit={handleSubmit} className="flex flex-col items-center space-y-6 w-full max-w-md">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="flex flex-col items-center space-y-6 w-full max-w-md"
+                    >
                         {/* Dropdown for movement selection */}
                         <select
                             value={movement}
@@ -119,7 +130,9 @@ const UploadForm = () => {
                             className="bg-white text-gray-800 p-3 rounded-md shadow-md transition duration-200 ease-in-out hover:bg-gray-100"
                             required
                         >
-                            <option value="" disabled>Select your movement</option>
+                            <option value="" disabled>
+                                Select your movement
+                            </option>
                             <option value="bench">Bench Press</option>
                             <option value="squat">Squat</option>
                             <option value="deadlift">Deadlift</option>
@@ -127,16 +140,22 @@ const UploadForm = () => {
 
                         <div
                             className={`border-4 border-dashed border-white p-10 w-full text-center cursor-pointer rounded-lg transition-transform duration-300 transform hover:scale-105 ${
-                                dragActive ? "bg-white bg-opacity-20" : "bg-white bg-opacity-10"
+                                dragActive
+                                    ? "bg-white bg-opacity-20"
+                                    : "bg-white bg-opacity-10"
                             }`}
                             onDragOver={handleDragOver} // Activate drag over event
                             onDragLeave={handleDragLeave} // Activate drag leave event
                             onDrop={handleDrop} // Handle file drop
-                            onClick={() => document.getElementById("video-upload").click()} // Click to open file input
+                            onClick={() =>
+                                document.getElementById("video-upload")?.click()
+                            } // Click to open file input
                         >
                             {/* Conditionally display uploaded video name or upload logo text */}
                             {fileName ? (
-                                <p className="text-white mt-2 font-semibold">Uploaded Video: "{fileName}"</p>
+                                <p className="text-white mt-2 font-semibold">
+                                    Uploaded Video: "{fileName}"
+                                </p>
                             ) : (
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
