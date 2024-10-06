@@ -1,5 +1,4 @@
 from collections import defaultdict
-from django.http import FileResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from rest_framework import status
@@ -73,18 +72,24 @@ def check_form(request):
             if movement == "squat":
                 return Response(
                     status=status.HTTP_200_OK,
-                    data={"warning_frames": util.check_squat(coords, angles)},
+                    data={
+                        "url": estimation[0],
+                        "warning_frames": util.check_squat(coords, angles),
+                    },
                 )
             if movement == "bench":
                 return Response(
                     status=status.HTTP_200_OK,
-                    data={"warning_frames": util.check_bench(angles, coords, indiv_coords)},
+                    data={
+                        "url": estimation[0],
+                        "warning_frames": util.check_bench(angles, coords, indiv_coords),
+                    },
                 )
             if movement == "deadlift":
                 return Response(
                     status=status.HTTP_200_OK,
                     data={
-                        "presigned_url": estimation[0],
+                        "url": estimation[0],
                         "warning_frames": util.check_deadlift(angles),
                     },
                 )

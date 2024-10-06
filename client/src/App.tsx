@@ -9,6 +9,9 @@ const UploadForm = () => {
     const [isSubmitting, setIsSubmitting] = useState(false); // State for form submission status
     const [isComplete, setIsComplete] = useState(false); // State for submission completion
 
+    const [warningFrames, setWarningFrames] = useState([]); // State for warning frames
+    const [videoUrl, setVideoUrl] = useState(""); // State for video URL
+
     // Handles file drop
     const handleDrop = (event: any) => {
         event.preventDefault();
@@ -75,6 +78,8 @@ const UploadForm = () => {
                 console.log("Video uploaded successfully!");
                 const data = await response.json();
                 console.log(data);
+                setWarningFrames(data.warning_frames);
+                setVideoUrl(data.url);
 
                 setIsComplete(true);
             } else {
@@ -108,7 +113,25 @@ const UploadForm = () => {
             {/* No jumping title */}
             {/* Check if analysis is complete */}
             {isComplete ? (
-                <div className="flex flex-col items-center space-y-4"></div>
+                <div className="flex flex-col items-center space-y-4">
+                    <p className="text-2xl">
+                        Analysis complete! Here are your warning frames:
+                    </p>
+                    <div className="flex flex-col items-center space-y-4">
+                        {warningFrames.map((frame: any, index: number) => (
+                            <h1 key={index} className="max-w-md w-full">
+                                {frame}
+                            </h1>
+                        ))}
+                    </div>
+                    {videoUrl && (
+                        <video
+                            src={videoUrl}
+                            controls
+                            className="max-w-md w-full"
+                        ></video>
+                    )}
+                </div>
             ) : isSubmitting ? (
                 <div className="flex flex-col items-center space-y-4">
                     <div className="w-16 h-16 border-4 border-t-4 border-white rounded-full animate-spin"></div>
