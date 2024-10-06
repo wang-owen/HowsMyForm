@@ -11,6 +11,7 @@ const App = () => {
 
     const [warningFrames, setWarningFrames] = useState([]); // State for warning frames
     const [warningMessages, setWarningMessages] = useState<string[]>([]);
+    const [displayMessages, setDisplayMessages] = useState<string[]>([]);
     const [videoUrl, setVideoUrl] = useState(""); // State for video URL
     const lastFramePaused = useRef(-1); // State for last frame paused
     const [pauseButton, setPauseButton] = useState("Play");
@@ -83,6 +84,7 @@ const App = () => {
             if (response.ok) {
                 const data = await response.json();
                 setWarningFrames(data.warning_frames);
+                setWarningMessages(data.warning_messages);
                 setVideoUrl(data.url);
                 setIsComplete(true);
             } else {
@@ -106,15 +108,16 @@ const App = () => {
             // Check if the video time has reached or exceeded a warning frame
             const checkWarningFrames = () => {
                 const currentTime = videoElement.currentTime;
-                for (const warningFrame of warningFrames) {
+                for (let i = 0; i < warningFrames.length; i++) {
+                    const warningFrame = warningFrames[i];
                     if (
                         warningFrame !== lastFramePaused.current &&
                         currentTime >= warningFrame / 30
                     ) {
                         videoElement.pause();
-                        setWarningMessages([
-                            ...warningMessages,
-                            `WARNING: Poor form detected at ${
+                        setDisplayMessages([
+                            ...displayMessages,
+                            `WARNING: ${warningMessages[i]} at ${
                                 Math.round(currentTime * 100) / 100
                             }s`,
                         ]);
@@ -125,12 +128,19 @@ const App = () => {
             };
             // Add the timeupdate event listener
             videoElement.addEventListener("timeupdate", checkWarningFrames);
+            videoElement.addEventListener("ended", () => {
+                setPauseButton("Play");
+                lastFramePaused.current = -1;
+            });
 
             // Cleanup listener on unmount
             return () => {
                 videoElement.removeEventListener(
                     "timeupdate",
                     checkWarningFrames
+                );
+                videoElement.removeEventListener("ended", () =>
+                    setPauseButton("Play")
                 );
             };
         }
@@ -164,25 +174,31 @@ const App = () => {
                                         </li>
                                     ))}
                                 </ul>
-                                <div className="flex gap-8">
+                                <div className="flex gap-8 justify-center">
                                     <video
                                         id="pose-video"
                                         src={videoUrl}
-                                        className="border-8 max-h-[700px] rounded-2xl"
+                                        className="border-8 max-h-[600px] rounded-2xl"
                                         autoPlay
                                         muted
                                     />
-                                    <div className="p-8 border-2 border-black rounded-2xl bg-[#1e1e1e]">
+                                    <div className="p-8 border-2 border-black rounded-2xl bg-[#1e1e1e] min-w-96">
                                         <ul>
-                                            {warningMessages.map(
-                                                (message, index) => (
-                                                    <li
-                                                        key={index}
-                                                        className="bg-[#4187f5] rounded-2xl py-1 px-2 my-8"
-                                                    >
-                                                        {message}
-                                                    </li>
+                                            {displayMessages.length > 0 ? (
+                                                displayMessages.map(
+                                                    (message, index) => (
+                                                        <li
+                                                            key={index}
+                                                            className="bg-[#4187f5] rounded-2xl py-1 px-2 my-8"
+                                                        >
+                                                            {message}
+                                                        </li>
+                                                    )
                                                 )
+                                            ) : (
+                                                <p className="text-gray-400 py-1 px-2 my-8">
+                                                    No warnings to show
+                                                </p> // Fallback when no warnings
                                             )}
                                         </ul>
                                     </div>
@@ -220,10 +236,11 @@ const App = () => {
                                 }
                                 lastFramePaused.current = -1;
                                 setWarningMessages([]);
+                                setDisplayMessages([]);
                             }}
                             className={buttonClass}
                         >
-                            Reset
+                            Loop
                         </button>
                     </div>
                 </div>
