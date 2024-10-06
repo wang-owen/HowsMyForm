@@ -156,13 +156,6 @@ def check_bench(angles, coords, indiv_coords):
             frames.append(i)
 
     for frame in frames:
-        print(
-            abs(
-                indiv_coords["left_shoulder"][frame][0]
-                - indiv_coords["left_elbow"][frame][0]
-            )
-            / shoulder_width
-        )
         if abs(
             indiv_coords["left_shoulder"][frame][0]
             - indiv_coords["left_elbow"][frame][0]
@@ -222,7 +215,6 @@ def check_deadlift(coords, angles):
         knee_angle = angles["knee"][frame]
 
         ratio = knee_angle / hip_angle
-        print(ratio)
 
         back_length = np.linalg.norm(
             [
